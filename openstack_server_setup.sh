@@ -8,7 +8,6 @@ scp ./$FILE toor@10.0.11.101:~/
 # On the ubuntu server
 FILE=fedora-coreos-XX.XXXXXXXX.X.X-openstack.x86_64.qcow2
 IMAGE=${FILE:0:-6} # remove extension .qcow2
-openstack image create --disk-format=qcow2 --min-disk=10 --min-ram=2 --progress --file=$FILE $IMAGE --property os_distro='fedora-coreos'
 
 # K8s intallation<
     sudo apt-get update
@@ -52,4 +51,30 @@ openstack image create --disk-format=qcow2 --min-disk=10 --min-ram=2 --progress 
     sudo kubeadm init --pod-network-cidr=10.244.0.0/16
     mkdir -p $HOME/.kube
     sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-    ssudo chown $(id -u):$(id -g) $HOME/.kube/config
+    sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+# Openstack configuration
+    source ~/kolla-openstack/bin/activate
+    source /etc/kolla/admin-openrc.sh
+    openstack image create
+        --disk-format=qcow2                                    \
+        --min-disk=10                                           \
+        --min-ram=2                                             \
+        --progress                                              \
+        --file=$FILE $IMAGE                                     \
+        --property os_distro='fedora-coreos'                    
+    
+    openstack coe cluster template create base-cluster-template \
+        --coe kubernetes                                        \
+        --image $IMAGE                                          \
+        --keypair mykey                                         \
+        --external-network public1                              \
+        --fixed-network demo-net                                \
+        --fixed-subnet demo-subnet                              \
+        --dns-nameserver 10.0.11.254                            \
+        --flavor m1.medium                                      \
+        --master-flavor m1.medium                               \
+        --volume-driver cinder                                  \
+        --docker-volume-size 5                                  \
+        --network-driver flannel                                \
+        --docker-storage-driver overlay2
