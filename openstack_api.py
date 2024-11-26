@@ -4,15 +4,16 @@ import json
 
 # TODO: Replace with .env file
 ENV = {
-	"user": "admin",
-	"password": "12345678",
-	"domain": "default",
-	"project": "demo",
-	"host": "openstack",
+	"user"      : "admin",
+	"password"  : "12345678",
+	"domain"    : "default",
+	"project"   : "demo",
+	"host"      : "openstack",
+	"server"    : "http://10.147.20.2",
+	"key_name"  : "production_vm_key",
+	"image_name": "alpine-extended-3.20.3",
 	"availability_zone": "nova",
-	"server": "http://10.147.20.2",
-	"image_name": "Ubuntu-22.04.5",
-	"flavor":"m1.small",
+	"flavor":"ds1G",
 	"endpoints": {
 		"token"   : "/identity/v3/auth/tokens",
 		"images"  : "/image/v2/images",
@@ -23,7 +24,15 @@ ENV = {
 	}
 }
 
-def find_by_name(arr, name: str):
+def find_all_by_name(arr, name:str):
+	found = []
+	for element in arr:
+		if element["name"] == name:
+			found.append(element)
+	
+	return found
+
+def find_first_by_name(arr, name: str):
 	for element in arr:
 		if element["name"] == name:
 			return element
@@ -127,24 +136,23 @@ def create_vm(token):
 	networks = list_networks(token)
 	project  = list_projects(token)
 
-	image   = find_by_name(images ["images" ], ENV["image_name"])
-	flavor  = find_by_name(flavors["flavors"], ENV["flavor"]    )
+	image   = find_first_by_name(images ["images" ], ENV["image_name"])
+	flavor  = find_first_by_name(flavors["flavors"], ENV["flavor"]    )
 	network = [
-		find_by_name(networks["networks"], "public"),
-		find_by_name(networks["networks"], "private"),
+		find_first_by_name(networks["networks"], "public"),
+		find_first_by_name(networks["networks"], "private"),
 	]
 
 	body = {
 		"server": {
-			# "host"      : ENV["host"],
 			"name"      : "example-server",
 			"imageRef"  : image["id"],
 			"flavorRef" : flavor["id"],
 			"networks"  : [
 				{ "uuid": network[0]["id"] },
-				# { "uuid": network[1]["id"] },
+				{ "uuid": network[1]["id"] },
 			],
-			"key_name"         : "production_vm_key",
+			"key_name"         : ENV["key_name"],
 			"availability_zone": ENV["availability_zone"],
 			"metadata": {
 				"description": "Test server instance"
@@ -157,13 +165,23 @@ def create_vm(token):
 	print(body)
 	print(response.status_code, json.loads(response.content.decode("utf-8")))
 
+def delete_vms_by_name(token, name):
+	instances = list_instances(token)
+	instances = find_all_by_name(instances["instances"], name)
+	headers = {"Content-type":"application/json", "X-Auth-Token": token}
+	url = ENV["server"]+ENV["endpoints"]["compute"]
+
+	for instance in instances:
+		response = requests.delete(url+"/"+instance["id"], headers=headerswrite)
+
+
 
 token = get_token()
 instances = list_instances(token)
 
 create_vm(token)
 
-# print(find_by_name(flavors["flavors"], "m1.small"))
-# print(find_by_name(images["images"], "Ubuntu-22.04.5"))
+# print(find_first_by_name(flavors["flavors"], "m1.small"))
+# print(find_first_by_name(images["images"], "Ubuntu-22.04.5"))
 
 # print(servers)
