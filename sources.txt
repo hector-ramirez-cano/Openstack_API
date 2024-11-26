@@ -1,0 +1,4 @@
+https://www.roksblog.de/openstack-magnum-cluster-api-driver/
+https://www.roksblog.de/deploy-kubernetes-clusters-in-openstack-within-minutes-with-magnum/
+https://superuser.openinfra.dev/articles/mastering-the-art-of-ci-cd-deploying-openstack-magnum-with-kubernetes-cluster-and-jenkins-for-the-perfect-setup/
+https://satishdotpatel.github.io/openstack-magnum-capi/
