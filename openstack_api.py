@@ -5,22 +5,21 @@ import json
 # TODO: Replace with .env file
 ENV = {
 	"user"      : "admin",
-	"password"  : "12345678",
+	"password"  : "0DlK10VnOHvbgpJY5hzHkX1nRKTyajLuaW93qu8O",
 	"domain"    : "default",
-	"project"   : "demo",
+	"project"   : "admin",
 	"host"      : "openstack",
-	"server"    : "http://10.147.20.2",
-	"key_name"  : "production_vm_key",
-	"image_name": "alpine-extended-3.20.3",
+	"server"    : "http://localhost",
+	"key_name"  : "mykey",
 	"availability_zone": "nova",
 	"flavor":"ds1G",
 	"endpoints": {
-		"token"   : "/identity/v3/auth/tokens",
-		"images"  : "/image/v2/images",
-		"compute" : "/compute/v2.1/servers",
-		"flavors" : "/compute/v2.1/flavors",
+		"token"   : ":5000/v3/auth/tokens",
+		"images"  : ":9292/v2/images",
+		"compute" : ":8774/v2.1/servers",
+		"flavors" : ":8774/v2.1/flavors",
 		"networks": ":9696/networking/v2.0/networks",
-		"projects": "/identity/v3/auth/projects",
+		"projects": ":5000/v3/auth/projects",
 	}
 }
 
@@ -128,7 +127,7 @@ def list_projects(token):
 	return list_endpoint(token, endpoint, expected_code, on_success_msg, unwrap_message)
 
 
-def create_vm(token):
+def create_vm(token, image):
 	url      = ENV["server"]+ENV["endpoints"]["compute"]
 	headers  = {"Content-type":"application/json", "X-Auth-Token": token}
 	images   = list_images  (token)
@@ -136,7 +135,7 @@ def create_vm(token):
 	networks = list_networks(token)
 	project  = list_projects(token)
 
-	image   = find_first_by_name(images ["images" ], ENV["image_name"])
+	image   = find_first_by_name(images ["images" ], image)
 	flavor  = find_first_by_name(flavors["flavors"], ENV["flavor"]    )
 	network = [
 		find_first_by_name(networks["networks"], "public"),

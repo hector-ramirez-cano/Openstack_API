@@ -22,6 +22,8 @@
     cp $HOME/kolla-openstack/share/kolla-ansible/ansible/inventory/all-in-one .
     cd $HOME/kolla-openstack
     sudo chown $USER:$USER /etc/kolla
+    source ~/kolla-openstack/bin/activate
+    source /etc/kolla/admin-openrc.sh
     kolla-ansible install-deps
     kolla-genpwd
     kolla-ansible -i all-in-one bootstrap-servers
