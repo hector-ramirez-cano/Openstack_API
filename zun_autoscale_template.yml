@@ -1,0 +1,109 @@
+heat_template_version: 2013-05-23
+
+description: >
+  Create a Load Balancer with Octavia to balance traffic between Zun containers,
+  with Auto-Scaling enabled for the containers.
+  
+parameters:
+  container_image:
+    type: string
+    description: The container image to use for the Zun containers.
+    default: "ubuntu"
+
+  container_flavor:
+    type: string
+    description: The flavor for the Zun containers.
+    default: "m1.small"
+
+  load_balancer_name:
+    type: string
+    description: The name of the load balancer.
+    default: "my-lb"
+
+  scaling_min_size:
+    type: number
+    description: The minimum number of containers.
+    default: 1
+
+  scaling_max_size:
+    type: number
+    description: The maximum number of containers.
+    default: 5
+
+resources:
+  
+  # Create the Zun container instances (these will be managed by the AutoScalingGroup)
+  zun_container_group:
+    type: OS::Heat::AutoScalingGroup
+    properties:
+      min_size: {get_param: scaling_min_size}
+      max_size: {get_param: scaling_max_size}
+      desired_capacity: {get_param: scaling_min_size}
+      resource:
+        type: OS::Zun::Container
+        properties:
+          name: "my-container"
+          image: {get_param: container_image}
+          flavor: {get_param: container_flavor}
+
+  # Create a Load Balancer
+  load_balancer:
+    type: OS::Octavia::LoadBalancer
+    properties:
+      name: {get_param: load_balancer_name}
+      vip_subnet: "private_subnet"  # Ensure this matches the subnet where the containers are deployed
+
+  # Create a Listener for the Load Balancer (TCP, HTTP, etc.)
+  load_balancer_listener:
+    type: OS::Octavia::Listener
+    properties:
+      name: "my-listener"
+      protocol: "TCP"  # You can also use "HTTP", "HTTPS", etc.
+      protocol_port: 80  # Port for the listener
+      loadbalancer: {get_resource: load_balancer}
+
+  # Create a Pool for the Load Balancer
+  load_balancer_pool:
+    type: OS::Octavia::Pool
+    properties:
+      name: "my-pool"
+      protocol: "TCP"  # The protocol the pool will use (HTTP/HTTPS/TCP)
+      lb_algorithm: "ROUND_ROBIN"  # The load balancing algorithm (e.g., ROUND_ROBIN, LEAST_CONNECTIONS)
+      listener: {get_resource: load_balancer_listener}
+
+  # Add Zun containers as members to the pool (will be dynamically added by the scaling group)
+  load_balancer_member:
+    type: OS::Octavia::Member
+    properties:
+      address: {get_attr: [zun_container_group, instances, 0, networks, private_network]}  # Dynamic IP
+      protocol_port: 80
+      pool: {get_resource: load_balancer_pool}
+      subnet: "private_subnet"  # Replace with the subnet where the containers are running
+
+  # Scaling policy to scale the containers based on CPU usage
+  scaling_policy_up:
+    type: OS::Heat::ScalingPolicy
+    properties:
+      adjustment_type: "ChangeInCapacity"
+      cooldown: 300
+      scaling_adjustment: 1
+      auto_scaling_group_id: {get_resource: zun_container_group}
+      metric: "cpu_utilization"
+      operator: "gt"
+      threshold: 70  # Trigger scaling up if CPU utilization is greater than 70%
+
+  scaling_policy_down:
+    type: OS::Heat::ScalingPolicy
+    properties:
+      adjustment_type: "ChangeInCapacity"
+      cooldown: 300
+      scaling_adjustment: -1
+      auto_scaling_group_id: {get_resource: zun_container_group}
+      metric: "cpu_utilization"
+      operator: "lt"
+      threshold: 30  # Trigger scaling down if CPU utilization is less than 30%
+
+outputs:
+  load_balancer_ip:
+    description: "The VIP (Virtual IP) of the load balancer"
+    value: {get_attr: [load_balancer, vip_address]}

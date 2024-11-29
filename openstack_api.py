@@ -2,6 +2,8 @@ import requests
 import sys
 import json
 
+from time import sleep
+
 # TODO: Replace with .env file
 ENV = {
 	"user"      : "admin",
@@ -9,17 +11,19 @@ ENV = {
 	"domain"    : "default",
 	"project"   : "admin",
 	"host"      : "openstack",
-	"server"    : "http://localhost",
+	"server"    : "http://10.0.11.101",
 	"key_name"  : "mykey",
 	"availability_zone": "nova",
+	"container_name": "barpo-kabalto",
 	"flavor":"ds1G",
 	"endpoints": {
 		"token"   : ":5000/v3/auth/tokens",
 		"images"  : ":9292/v2/images",
 		"compute" : ":8774/v2.1/servers",
 		"flavors" : ":8774/v2.1/flavors",
-		"networks": ":9696/networking/v2.0/networks",
+		"networks": ":9696/v2.0/networks",
 		"projects": ":5000/v3/auth/projects",
+		"container": ":9517/v1/containers"
 	}
 }
 
@@ -127,6 +131,14 @@ def list_projects(token):
 	return list_endpoint(token, endpoint, expected_code, on_success_msg, unwrap_message)
 
 
+def list_containers(token):
+	endpoint = ENV["endpoints"]["container"]
+	expected_code = 200
+	on_success_msg = "[INFO ]Listed containers successfully"
+	unwrap_message = "[ERROR]Failed to list containers."
+	return list_endpoint(token, endpoint, expected_code, on_success_msg, unwrap_message)
+
+
 def create_vm(token, image):
 	url      = ENV["server"]+ENV["endpoints"]["compute"]
 	headers  = {"Content-type":"application/json", "X-Auth-Token": token}
@@ -164,6 +176,75 @@ def create_vm(token, image):
 	print(body)
 	print(response.status_code, json.loads(response.content.decode("utf-8")))
 
+
+
+def create_container(token, image):
+	url      = ENV["server"]+ENV["endpoints"]["container"]
+	headers  = {"Content-type":"application/json", "X-Auth-Token": token}
+	networks = list_networks(token)
+	
+	network = [
+		find_first_by_name(networks["networks"], "net-ext"),
+		#find_first_by_name(networks["networks"], "private"),
+	]
+
+	body = {
+		"name"      : ENV["container_name"],
+		"image"     : image,
+		"cpu"       : 1.0,
+		"memory"    : 512,
+		"availability_zone": ENV["availability_zone"],
+		"nets": [
+			{
+				"v4-fixed-ip": "192.168.1.80",
+				"network": network[0]["id"],
+			}
+    	],
+		"security_groups": ["default"],
+	}
+
+	print(body)
+	
+	response = requests.post(url=url, json=body, headers=headers)
+	response_body = json.loads(response.content.decode("utf-8"))
+
+	if response.status_code != 202:
+		print(f"[ERROR]Failed to create container with error {response.status_code}\n {response_body}")
+		exit(1)
+
+	url = url + "/" + response_body["uuid"]+"/start"
+
+	sleep(10)
+
+	response = requests.post(url=url, headers=headers)
+	response_body = json.loads(response.content.decode("utf-8"))
+
+	if response.status_code != 202:
+		print(f"[ERROR]Failed to start container with error {response.status_code}\n {response_body}")
+		exit(1)
+
+
+
+
+def delete_containers_by_name(token, name):
+	containers = list_containers(token)
+	containers = find_all_by_name(containers["containers"], name)
+	headers = {"Content-type":"application/json", "X-Auth-Token": token}
+	url = ENV["server"]+ENV["endpoints"]["container"]
+
+	for container in containers:
+		response = requests.post(url+"/"+container["uuid"]+"/stop", headers=headers)
+		print(response.status_code)
+
+	sleep(5)
+
+
+	for container in containers:
+		response = requests.delete(url+"/"+container["uuid"], headers=headers)
+		print(response.status_code, response.content)
+
+
+
 def delete_vms_by_name(token, name):
 	instances = list_instances(token)
 	instances = find_all_by_name(instances["instances"], name)
@@ -171,16 +252,24 @@ def delete_vms_by_name(token, name):
 	url = ENV["server"]+ENV["endpoints"]["compute"]
 
 	for instance in instances:
-		response = requests.delete(url+"/"+instance["id"], headers=headerswrite)
+		response = request.post(url+"/"+instance["id"]+"/stop", headers=headers)
+		print(response.status_code)
 
+	sleep(10)
 
+	for instance in instances:
+		response = requests.delete(url+"/"+instance["id"], headers=headers)
+		print(response.status_code)
+
+def refresh_container(token):
+	print("[INFO ]Deleting old containers")
+	delete_containers_by_name(token, ENV["container_name"])
+
+	print("[INFO ]Creating new containers")
+	create_container(token, "jaimelegor/vite-react-app:v5")
 
 token = get_token()
-instances = list_instances(token)
+#create_container(token, "jaimelegor/vite-react-app:latest")
+#delete_containers_by_name(token, ENV["container_name"])
 
-create_vm(token)
-
-# print(find_first_by_name(flavors["flavors"], "m1.small"))
-# print(find_first_by_name(images["images"], "Ubuntu-22.04.5"))
-
-# print(servers)
+refresh_container(token)

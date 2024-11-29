@@ -122,13 +122,13 @@ control
 #control
 
 [gnocchi:children]
-#control
+control
 
 [ceilometer:children]
-#control
+control
 
 [aodh:children]
-#control
+control
 
 [cyborg:children]
 #control
@@ -338,13 +338,13 @@ storage
 
 # Heat
 [heat-api:children]
-#heat
+heat
 
 [heat-api-cfn:children]
-#heat
+heat
 
 [heat-engine:children]
-#heat
+heat
 
 # Ironic
 [ironic-api:children]
@@ -384,16 +384,16 @@ magnum
 
 # Aodh
 [aodh-api:children]
-#aodh
+aodh
 
 [aodh-evaluator:children]
-#aodh
+aodh
 
 [aodh-listener:children]
-#aodh
+aodh
 
 [aodh-notifier:children]
-#aodh
+aodh
 
 # Cyborg
 [cyborg-api:children]
@@ -407,26 +407,26 @@ magnum
 
 # Gnocchi
 [gnocchi-api:children]
-#gnocchi
+gnocchi
 
 [gnocchi-statsd:children]
-#gnocchi
+gnocchi
 
 [gnocchi-metricd:children]
-#gnocchi
+gnocchi
 
 # Ceilometer
 [ceilometer-central:children]
-#ceilometer
+ceilometer
 
 [ceilometer-notification:children]
-#ceilometer
+ceilometer
 
 [ceilometer-compute:children]
-#compute
+compute
 
 [ceilometer-ipmi:children]
-#compute
+compute
 
 # Multipathd
 [multipathd:children]
@@ -603,3 +603,4 @@ ovn-database
 
 [letsencrypt-lego:children]
 #letsencrypt
+

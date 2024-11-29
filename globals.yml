@@ -1,4 +1,4 @@
----
+
 # You can use this file to override _any_ variable throughout Kolla.
 # Additional options can be found in the
 # 'kolla-ansible/ansible/group_vars/all.yml' file. Default value of all the
@@ -35,6 +35,10 @@ workaround_ansible_issue_8743: yes
 ###############
 # Valid options are [ COPY_ONCE, COPY_ALWAYS ]
 config_strategy: "COPY_ALWAYS"
+custom_config: "/etc/kolla/config"
+kolla_additional_packages:
+  - heat-plugin-zun
+
 
 # Valid options are ['centos', 'debian', 'rocky', 'ubuntu']
 kolla_base_distro: "ubuntu"
@@ -285,7 +289,7 @@ neutron_enable_rolling_upgrade: "yes"
 # Region options
 ################
 # Use this option to change the name of this region.
-#openstack_region_name: "RegionOne"
+openstack_region_name: "mx-central1"
 
 # Use this option to define a list of region names - only needs to be configured
 # in a multi-region deployment, and then only in the *first* region.
@@ -316,12 +320,12 @@ enable_nova: "{{ enable_openstack_core | bool }}"
 #enable_rabbitmq: "{{ 'yes' if om_rpc_transport == 'rabbit' or om_notify_transport == 'rabbit' else 'no' }}"
 
 # OpenStack services can be enabled or disabled with these options
-enable_aodh: "no"
+enable_aodh: "yes"
 #enable_barbican: "no"
 #enable_blazar: "no"
 enable_ceilometer: "yes"
-#enable_ceilometer_ipmi: "no"
-#enable_cells: "no"
+enable_ceilometer_ipmi: "yes"
+enable_cells: "yes"
 #enable_central_logging: "no"
 #enable_ceph_rgw: "no"
 #enable_ceph_rgw_loadbalancer: "{{ enable_ceph_rgw | bool }}"
@@ -408,7 +412,7 @@ enable_opensearch_dashboards: "{{ enable_opensearch | bool }}"
 #enable_ovn: "{{ enable_neutron | bool and neutron_plugin_agent == 'ovn' }}"
 #enable_ovs_dpdk: "no"
 enable_osprofiler: "yes"
-#enable_placement: "{{ enable_nova | bool or enable_zun | bool }}"
+enable_placement: "{{ enable_nova | bool or enable_zun | bool }}"
 enable_prometheus: "yes"
 #enable_proxysql: "no"
 #enable_redis: "no"
@@ -422,7 +426,8 @@ enable_prometheus: "yes"
 #enable_venus: "no"
 enable_watcher: "yes"
 enable_zun: "yes"
-
+enable_zun_wsgi: "yes"  # If you're using WSGI for Zun API
+enable_heat_api_cfn: "yes"  # Heat's CloudFormation API support
 #############
 # S3 options
 #############
@@ -547,7 +552,7 @@ keystone_admin_project: "admin"
 # Gnocchi options
 #################
 # Valid options are [ file, ceph, swift ]
-#gnocchi_backend_storage: "{% if enable_swift | bool %}swift{% else %}file{% endif %}"
+gnocchi_backend_storage: "{% if enable_swift | bool %}swift{% else %}file{% endif %}"
 
 # Valid options are [redis, '']
 #gnocchi_incoming_storage: "{{ 'redis' if enable_redis | bool else '' }}"
@@ -720,7 +725,8 @@ keystone_admin_project: "admin"
 # This parameter defines matching pattern: if "strict" mode was selected,
 # for swift_devices_match_mode then swift_device_name should specify the name of
 # the special swift partition for example: "KOLLA_SWIFT_DATA", if "prefix" mode was
-# selected then swift_devices_name should specify a pattern which would match to
+# selected then 
+# swift_devices_name should specify a pattern which would match to
 # filesystems' labels prepared for swift.
 #swift_devices_name: "KOLLA_SWIFT_DATA"
 
@@ -891,3 +897,4 @@ keystone_admin_project: "admin"
 # If `etcd_remove_deleted_members` is enabled, Kolla Ansible will automatically
 # remove etcd members from the cluster that are no longer in the inventory.
 #etcd_remove_deleted_members: "no"
+

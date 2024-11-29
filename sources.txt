@@ -3,3 +3,5 @@ https://www.roksblog.de/deploy-kubernetes-clusters-in-openstack-within-minutes-w
 https://superuser.openinfra.dev/articles/mastering-the-art-of-ci-cd-deploying-openstack-magnum-with-kubernetes-cluster-and-jenkins-for-the-perfect-setup/
 https://satishdotpatel.github.io/openstack-magnum-capi/
 https://kifarunix.com/deploy-all-in-one-openstack-with-kolla-ansible-on-ubuntu-22-04/
+https://pypi.org/project/openstacksdk/
+https://docs.redhat.com/en/documentation/red_hat_openstack_platform/15/html/auto_scaling_for_instances/configuring_auto_scaling_for_compute_instances

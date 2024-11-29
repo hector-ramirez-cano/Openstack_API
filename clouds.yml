@@ -1,0 +1,8 @@
+clouds:
+  RegionOne:
+    region_name: RegionOne
+    auth:
+      username: 'admin'
+      password: '0DlK10VnOHvbgpJY5hzHkX1nRKTyajLuaW93qu8O'
+      project_name: 'demo'
+      auth_url: 'http://localhost:5000/v3'
